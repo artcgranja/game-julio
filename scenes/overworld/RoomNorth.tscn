@@ -1,0 +1,54 @@
+[gd_scene load_steps=6 format=3 uid="uid://room_north"]
+
+[ext_resource type="Script" path="res://scripts/Room.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/overworld/Player.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://enemy_scene" path="res://scenes/overworld/Enemy.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://door_scene" path="res://scenes/overworld/Door.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://hud_scene" path="res://scenes/ui/HUD.tscn" id="5"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1"]
+
+[sub_resource type="TileSet" id="TileSet_1"]
+tile_size = Vector2i(16, 16)
+sources/0 = SubResource("TileSetAtlasSource_1")
+
+[node name="RoomNorth" type="Node2D"]
+script = ExtResource("1")
+room_id = "room_north"
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_1")
+format = 2
+
+[node name="Entities" type="Node2D" parent="."]
+
+[node name="Player" parent="Entities" instance=ExtResource("2")]
+position = Vector2(80, 144)
+
+[node name="Enemy1" parent="Entities" instance=ExtResource("3")]
+position = Vector2(96, 64)
+enemy_type = "skeleton"
+enemy_id = "enemy_north_1"
+
+[node name="Enemy2" parent="Entities" instance=ExtResource("3")]
+position = Vector2(48, 96)
+enemy_type = "skeleton"
+enemy_id = "enemy_north_2"
+
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="DoorSouth" parent="Doors" instance=ExtResource("4")]
+position = Vector2(80, 144)
+door_id = "door_north_south"
+is_locked = false
+target_room = "res://scenes/overworld/Room.tscn"
+target_position = Vector2(80, 32)
+
+[node name="DoorEast" parent="Doors" instance=ExtResource("4")]
+position = Vector2(144, 80)
+door_id = "door_north_east"
+is_locked = true
+target_room = "res://scenes/overworld/RoomSecret.tscn"
+target_position = Vector2(32, 80)
+
+[node name="HUD" parent="." instance=ExtResource("5")]
