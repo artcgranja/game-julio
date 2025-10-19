@@ -19,6 +19,9 @@ var color_map = {
 }
 
 func _ready():
+	# Set z_index to render above room layers (floor=0, walls=1, decorations=2)
+	z_index = 3
+
 	start_position = position
 	randomize_patrol_direction()
 

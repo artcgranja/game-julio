@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://room_base"]
+[gd_scene load_steps=4 format=3 uid="uid://room_base"]
 
 [ext_resource type="Script" path="res://scripts/Room.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/overworld/Player.tscn" id="2"]
@@ -6,27 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://door_scene" path="res://scenes/overworld/Door.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://hud_scene" path="res://scenes/ui/HUD.tscn" id="5"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1"]
-
-[sub_resource type="TileSet" id="TileSet_1"]
-tile_size = Vector2i(16, 16)
-sources/0 = SubResource("TileSetAtlasSource_1")
-
 [node name="Room" type="Node2D"]
 script = ExtResource("1")
 room_id = "room_start"
-
-[node name="TileMap" type="TileMap" parent="."]
-tile_set = SubResource("TileSet_1")
-format = 2
-
-[node name="Floor" type="Node2D" parent="."]
-
-[node name="FloorTiles" type="Node2D" parent="Floor"]
-
-[node name="Walls" type="StaticBody2D" parent="."]
-
-[node name="WallTiles" type="Node2D" parent="Walls"]
+room_theme = "normal"
 
 [node name="Entities" type="Node2D" parent="."]
 

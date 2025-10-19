@@ -10,6 +10,9 @@ var is_moving = false
 var movement_direction = Vector2.ZERO
 
 func _ready():
+	# Set z_index to render above room layers (floor=0, walls=1, decorations=2)
+	z_index = 3
+
 	# Use saved position from GameManager if available
 	if GameManager.player_position != Vector2.ZERO:
 		position = GameManager.player_position
