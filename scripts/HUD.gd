@@ -8,12 +8,16 @@ extends CanvasLayer
 @onready var sword_label = $Panel/VBoxContainer/SwordLabel
 
 func _ready():
-	update_hud()
+	# Connect to GameManager signals for efficient updates
+	GameManager.party_stats_changed.connect(_on_party_stats_changed)
+	GameManager.keys_changed.connect(_on_keys_changed)
+	GameManager.sword_upgraded.connect(_on_sword_upgraded)
 
-func _process(_delta):
+	# Initial update
 	update_hud()
 
 func update_hud():
+	"""Update all HUD elements"""
 	if GameManager.party.is_empty():
 		return
 
@@ -28,5 +32,19 @@ func update_hud():
 	if keys_label:
 		keys_label.text = "Keys: %d" % GameManager.keys
 
+	if sword_label:
+		sword_label.text = "Sword: Level %d" % GameManager.sword_level
+
+func _on_party_stats_changed():
+	"""Update when party stats change (HP, level, etc.)"""
+	update_hud()
+
+func _on_keys_changed(_new_count: int):
+	"""Update when key count changes"""
+	if keys_label:
+		keys_label.text = "Keys: %d" % GameManager.keys
+
+func _on_sword_upgraded(_new_level: int):
+	"""Update when sword is upgraded"""
 	if sword_label:
 		sword_label.text = "Sword: Level %d" % GameManager.sword_level

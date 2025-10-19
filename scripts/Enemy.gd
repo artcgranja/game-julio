@@ -54,8 +54,8 @@ func _physics_process(delta):
 	move_and_slide()
 
 func randomize_patrol_direction():
-	# Choose random cardinal direction
-	var directions = [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT, Vector2.ZERO]
+	# Choose random cardinal direction (removed ZERO to prevent freezing)
+	var directions = [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]
 	patrol_direction = directions[randi() % directions.size()]
 
 func _on_player_collision(body):
@@ -63,8 +63,11 @@ func _on_player_collision(body):
 		start_battle()
 
 func start_battle():
-	# Trigger battle with this enemy type
-	BattleManager.start_battle([enemy_type])
+	# Trigger battle with this enemy type, passing our ID for tracking
+	BattleManager.start_battle([enemy_type], enemy_id, GameManager.current_room)
+
+	# Small delay to ensure BattleManager completes initialization
+	await get_tree().process_frame
 
 	# Transition to battle scene
 	get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")

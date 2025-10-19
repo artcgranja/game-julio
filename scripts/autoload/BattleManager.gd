@@ -16,6 +16,10 @@ var turn_queue: Array[Dictionary] = []
 var current_turn_index: int = 0
 var battle_scene_path: String = "res://scenes/battle/BattleScene.tscn"
 
+# Track which overworld enemy triggered the battle
+var triggering_enemy_id: String = ""
+var triggering_room_id: String = ""
+
 # Enemy data templates
 var enemy_templates: Dictionary = {
 	"goblin": {
@@ -47,10 +51,14 @@ var enemy_templates: Dictionary = {
 	}
 }
 
-func start_battle(enemies: Array[String]):
+func start_battle(enemies: Array[String], enemy_id: String = "", room_id: String = ""):
 	"""Initialize a new battle with given enemy types"""
 	in_battle = true
 	current_enemies.clear()
+
+	# Store info about the overworld enemy that triggered this battle
+	triggering_enemy_id = enemy_id
+	triggering_room_id = room_id
 
 	# Create enemy instances
 	for enemy_type in enemies:
@@ -80,10 +88,10 @@ func build_turn_queue():
 	"""Build the turn order based on LCK stat (speed)"""
 	turn_queue.clear()
 
-	# Add all party members
+	# Add all party members (use direct references, not duplicates)
 	for character in GameManager.party:
 		if character["current_hp"] > 0:
-			turn_queue.append(character.duplicate())
+			turn_queue.append(character)
 
 	# Add all enemies
 	for enemy in current_enemies:
@@ -107,11 +115,7 @@ func next_turn():
 	if current_turn_index >= turn_queue.size():
 		build_turn_queue()
 		current_turn_index = 0
-		# Clear defending status at end of round
-		for character in GameManager.party:
-			character["defending"] = false
-		for enemy in current_enemies:
-			enemy["defending"] = false
+		# Defending status is now cleared when damage is taken
 
 	# Skip dead combatants
 	while current_turn_index < turn_queue.size():
@@ -128,17 +132,17 @@ func perform_attack(attacker: Dictionary, target: Dictionary):
 	var damage = calculate_damage(attacker, target)
 	target["current_hp"] = max(0, target["current_hp"] - damage)
 
+	# Clear defending status after taking damage
+	target["defending"] = false
+
 	damage_dealt.emit(target, damage)
 	action_performed.emit(attacker, "Attack")
 
-	# Update party member HP in GameManager
+	# Emit signal to update HUD if party member HP changed
 	if not target.has("is_enemy"):
-		update_party_member_hp(target)
+		GameManager.party_stats_changed.emit()
 
-	# Update enemy HP
-	if target.has("is_enemy"):
-		update_enemy_hp(target)
-
+	# No need to sync - we're using direct references now
 	check_battle_end()
 
 func perform_defend(character: Dictionary):
@@ -162,11 +166,7 @@ func use_item_on_target(item_name: String, target_index: int) -> bool:
 	# For now, only healing potions
 	if item_name == "healing_potion":
 		GameManager.heal_party_member(target_index, 20)
-		# Update the turn queue version
-		for character in turn_queue:
-			if not character.has("is_enemy") and character["name"] == GameManager.party[target_index]["name"]:
-				character["current_hp"] = GameManager.party[target_index]["current_hp"]
-				break
+		# Using direct references - HP is already updated
 
 	return true
 
@@ -215,20 +215,6 @@ func enemy_ai_action(enemy: Dictionary):
 		# Defend
 		perform_defend(enemy)
 
-func update_party_member_hp(character: Dictionary):
-	"""Sync party member HP back to GameManager"""
-	for member in GameManager.party:
-		if member["name"] == character["name"]:
-			member["current_hp"] = character["current_hp"]
-			break
-
-func update_enemy_hp(enemy: Dictionary):
-	"""Sync enemy HP in current_enemies"""
-	for e in current_enemies:
-		if e == enemy:
-			e["current_hp"] = enemy["current_hp"]
-			break
-
 func check_battle_end():
 	"""Check if battle has ended (all enemies or all party dead)"""
 	var all_enemies_dead = true
@@ -250,17 +236,24 @@ func end_battle(victory: bool, fled: bool = false):
 	in_battle = false
 
 	if victory and not fled:
-		# Grant XP
+		# Grant XP only from defeated enemies
 		var total_xp = 0
 		for enemy in current_enemies:
-			total_xp += enemy["xp_reward"]
+			if enemy["current_hp"] <= 0:
+				total_xp += enemy["xp_reward"]
 
-		GameManager.add_xp_to_party(total_xp)
+		if total_xp > 0:
+			GameManager.add_xp_to_party(total_xp)
 
-		# Check for key drops
+		# Check for key drops only from defeated enemies
 		for enemy in current_enemies:
-			if randf() < enemy["key_drop_chance"]:
-				GameManager.add_key()
+			if enemy["current_hp"] <= 0:
+				if randf() < enemy["key_drop_chance"]:
+					GameManager.add_key()
+
+		# Mark the overworld enemy as defeated
+		if triggering_enemy_id != "" and triggering_room_id != "":
+			GameManager.mark_enemy_defeated(triggering_room_id, triggering_enemy_id)
 
 	battle_ended.emit(victory)
 

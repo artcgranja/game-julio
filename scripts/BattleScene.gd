@@ -55,7 +55,9 @@ func setup_combatants():
 
 	for i in range(GameManager.party.size()):
 		var character = GameManager.party[i]
-		var sprite = create_combatant_sprite(character, party_colors[i], false)
+		# Use default color if index out of bounds
+		var color = party_colors[i] if i < party_colors.size() else Color.WHITE
+		var sprite = create_combatant_sprite(character, color, false)
 		party_container.add_child(sprite)
 		party_sprites.append(sprite)
 
@@ -154,6 +156,11 @@ func _on_attack_button_pressed():
 	hide_action_menu()
 	var attacker = BattleManager.get_current_combatant()
 
+	# Validate attacker exists
+	if attacker.is_empty():
+		display_message("Error: No valid combatant!")
+		return
+
 	# Select random alive enemy
 	var alive_enemies = []
 	for enemy in BattleManager.current_enemies:
@@ -161,6 +168,7 @@ func _on_attack_button_pressed():
 			alive_enemies.append(enemy)
 
 	if alive_enemies.is_empty():
+		display_message("No enemies to attack!")
 		return
 
 	var target = alive_enemies[randi() % alive_enemies.size()]
@@ -175,6 +183,12 @@ func _on_defend_button_pressed():
 
 	hide_action_menu()
 	var defender = BattleManager.get_current_combatant()
+
+	# Validate defender exists
+	if defender.is_empty():
+		display_message("Error: No valid combatant!")
+		return
+
 	BattleManager.perform_defend(defender)
 
 	await get_tree().create_timer(1.0).timeout
@@ -186,6 +200,18 @@ func _on_items_button_pressed():
 
 	# Simple implementation: use healing potion on self
 	var current = BattleManager.get_current_combatant()
+
+	# Validate current combatant exists
+	if current.is_empty():
+		display_message("Error: No valid combatant!")
+		return
+
+	# Only party members can use items (enemies can't)
+	if current.has("is_enemy"):
+		display_message("Enemies can't use items!")
+		hide_action_menu()
+		BattleManager.next_turn()
+		return
 
 	# Find party member index
 	var party_index = -1
@@ -203,6 +229,11 @@ func _on_items_button_pressed():
 			BattleManager.next_turn()
 		else:
 			display_message("No items available!")
+	else:
+		# This shouldn't happen, but handle it gracefully
+		display_message("Error: Character not found in party!")
+		hide_action_menu()
+		BattleManager.next_turn()
 
 func _on_run_button_pressed():
 	if not awaiting_player_input:

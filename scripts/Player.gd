@@ -10,6 +10,11 @@ var is_moving = false
 var movement_direction = Vector2.ZERO
 
 func _ready():
+	# Use saved position from GameManager if available
+	if GameManager.player_position != Vector2.ZERO:
+		position = GameManager.player_position
+		GameManager.player_position = Vector2.ZERO  # Reset after using
+
 	# Ensure player snaps to grid
 	position = position.snapped(Vector2(TILE_SIZE, TILE_SIZE))
 

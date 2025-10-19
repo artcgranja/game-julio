@@ -3,6 +3,11 @@ extends Node
 # Global game state manager
 # Handles party, inventory, progression, and game state
 
+# Signals for HUD updates
+signal party_stats_changed
+signal keys_changed(new_count: int)
+signal sword_upgraded(new_level: int)
+
 # Party system
 var party: Array[Dictionary] = []
 var max_party_size: int = 3
@@ -26,6 +31,9 @@ var defeated_enemies: Dictionary = {}
 
 # Room completion tracking
 var unlocked_doors: Array[String] = []
+
+# Collected upgrades tracking
+var collected_upgrades: Array[String] = []
 
 func _ready():
 	# Initialize default party
@@ -121,14 +129,19 @@ func level_up_character(character: Dictionary):
 	# Increase XP requirement for next level
 	character["xp_to_next"] = int(character["xp_to_next"] * 1.5)
 
+	# Emit signal for HUD update
+	party_stats_changed.emit()
+
 func add_key():
 	"""Add a key to inventory"""
 	keys += 1
+	keys_changed.emit(keys)
 
 func use_key() -> bool:
 	"""Use a key, returns true if successful"""
 	if keys > 0:
 		keys -= 1
+		keys_changed.emit(keys)
 		return true
 	return false
 
@@ -137,6 +150,7 @@ func upgrade_sword():
 	if sword_level < 3:
 		sword_level += 1
 		update_sword_bonus()
+		sword_upgraded.emit(sword_level)
 
 func update_sword_bonus():
 	"""Calculate sword damage bonus based on level"""
@@ -163,6 +177,7 @@ func heal_party_member(index: int, amount: int):
 			party[index]["current_hp"] + amount,
 			party[index]["max_hp"]
 		)
+		party_stats_changed.emit()
 
 func is_party_alive() -> bool:
 	"""Check if any party member is still alive"""
@@ -192,3 +207,12 @@ func unlock_door(door_id: String):
 func is_door_unlocked(door_id: String) -> bool:
 	"""Check if a door is unlocked"""
 	return unlocked_doors.has(door_id)
+
+func mark_upgrade_collected(upgrade_id: String):
+	"""Mark an upgrade as collected"""
+	if not collected_upgrades.has(upgrade_id):
+		collected_upgrades.append(upgrade_id)
+
+func is_upgrade_collected(upgrade_id: String) -> bool:
+	"""Check if an upgrade has been collected"""
+	return collected_upgrades.has(upgrade_id)

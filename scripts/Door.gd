@@ -8,6 +8,7 @@ extends Area2D
 @export var target_position: Vector2 = Vector2.ZERO
 
 var player_nearby: bool = false
+var is_transitioning: bool = false  # Prevent multiple transitions
 
 func _ready():
 	# Check if door has been unlocked
@@ -17,10 +18,13 @@ func _ready():
 	update_appearance()
 
 func _process(_delta):
-	if player_nearby and Input.is_action_just_pressed("ui_accept"):
+	if player_nearby and Input.is_action_just_pressed("ui_accept") and not is_transitioning:
 		try_open_door()
 
 func try_open_door():
+	if is_transitioning:
+		return  # Already transitioning
+
 	if is_locked:
 		# Try to use a key
 		if GameManager.use_key():
@@ -29,11 +33,17 @@ func try_open_door():
 			update_appearance()
 			print("Door unlocked!")
 			# Small delay then transition
+			is_transitioning = true
 			await get_tree().create_timer(0.5).timeout
-			transition_to_room()
+			# Check if player still nearby after delay
+			if player_nearby:
+				transition_to_room()
+			else:
+				is_transitioning = false
 		else:
 			print("This door is locked. You need a key!")
 	else:
+		is_transitioning = true
 		transition_to_room()
 
 func transition_to_room():
