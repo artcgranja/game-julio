@@ -2,8 +2,8 @@ extends Control
 
 # Main battle scene controller
 
-@onready var party_container = $PartyContainer
-@onready var enemy_container = $EnemyContainer
+@onready var party_container = $BattleArea/PartyContainer
+@onready var enemy_container = $BattleArea/EnemyContainer
 @onready var action_panel = $ActionPanel
 @onready var message_label = $MessageLabel
 
